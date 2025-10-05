@@ -6,17 +6,46 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 include("php/db.php");
-// include("delete_expired_auctions.php"); // This logic should be run by a cron job, not on page load. For now, we assume it's handled.
 
 // Get the logged-in user's name
 $user_id = $_SESSION['user_id'];
-$query = "SELECT username FROM users WHERE id = ?";
+$user_query = "SELECT username FROM users WHERE id = ?";
+$stmt_user = $conn->prepare($user_query);
+$stmt_user->bind_param("i", $user_id);
+$stmt_user->execute();
+$user_result = $stmt_user->get_result();
+$user = $user_result->fetch_assoc();
+$username = $user['username'];
+
+// --- Filter Logic ---
+$selected_brand = $_GET['brand'] ?? 'all';
+// Expanded the list of brands for the filter
+$brands = [
+    'RM' => 'Richard Mille',
+    'PP' => 'Patek Philippe',
+    'AP' => 'Audemars Piguet',
+    'Hublot' => 'Hublot',
+    'VC' => 'Vacheron Constantin'
+];
+
+$query = "SELECT *, TIMESTAMPDIFF(SECOND, NOW(), end_time) AS time_left 
+          FROM auctions 
+          WHERE end_time > NOW() AND status != 'expired'";
+
+if ($selected_brand !== 'all' && array_key_exists($selected_brand, $brands)) {
+    $query .= " AND brand = ?";
+}
+
+$query .= " ORDER BY start_time ASC";
+
 $stmt = $conn->prepare($query);
-$stmt->bind_param("i", $user_id);
+
+if ($selected_brand !== 'all' && array_key_exists($selected_brand, $brands)) {
+    $stmt->bind_param("s", $selected_brand);
+}
+
 $stmt->execute();
 $result = $stmt->get_result();
-$user = $result->fetch_assoc();
-$username = $user['username'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -27,26 +56,19 @@ $username = $user['username'];
     <title>Live Auctions | TimeLuxe Auctions</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        /*
-            DESIGNER'S NOTES - The Auction Gallery (Layout Revision)
-
-            Per the user's request, the layout is being updated to ensure items are always centered.
-
-            1.  CENTERED LAYOUT: The `.auction-grid` has been changed from `display: grid` to `display: flex` with `justify-content: center`. This ensures that if there are fewer items than can fill a row (e.g., 1 or 2 cards), they will be horizontally centered in the container, creating a more balanced and professional presentation.
-            2.  ADMIN LINK: Added a conditional "Admin Panel" button in the header, visible only to users with an 'admin' role, for seamless navigation.
-            3.  PRICE FORMATTING: Applied `number_format()` to display prices with commas for improved readability.
-        */
-
         :root {
-            --bg-color: #121212;
+            --bg-color: #0e0e0e;
             --card-bg: #1A1A1A;
             --primary-gold: #c0a060;
             --text-color: #EAEAEA;
             --text-light: #999;
-            --font-serif: 'Playfair Display', serif;
-            --font-sans: 'Poppins', sans-serif;
+            --error-red: #E53935;
+            --success-green: #43A047;
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-sans: 'Inter', sans-serif;
+            --border-dark: #2a2a2a;
         }
 
         body {
@@ -54,6 +76,10 @@ $username = $user['username'];
             font-family: var(--font-sans);
             background-color: var(--bg-color);
             color: var(--text-color);
+            background-image: radial-gradient(circle, rgba(18, 18, 18, 0.8) 0%, rgba(18, 18, 18, 1) 75%), url('https://images.unsplash.com/photo-1610603114859-c7003b743758?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
         .gallery-header {
@@ -63,7 +89,7 @@ $username = $user['username'];
             padding: 20px 40px;
             background-color: rgba(10, 10, 10, 0.7);
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 1px solid var(--border-dark);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -79,12 +105,7 @@ $username = $user['username'];
             gap: 20px;
         }
 
-        .user-info span {
-            font-size: 0.9rem;
-        }
-
         .admin-btn {
-            font-family: var(--font-sans);
             font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
@@ -94,7 +115,7 @@ $username = $user['username'];
             padding: 8px 16px;
             border: 1px solid var(--primary-gold);
             border-radius: 20px;
-            transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
         }
 
         .admin-btn:hover {
@@ -104,9 +125,7 @@ $username = $user['username'];
         }
 
         .logout-btn {
-            font-family: var(--font-sans);
             font-size: 0.8rem;
-            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
             text-decoration: none;
@@ -114,7 +133,7 @@ $username = $user['username'];
             padding: 8px 16px;
             border: 1px solid #333;
             border-radius: 20px;
-            transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+            transition: all 0.3s ease;
         }
 
         .logout-btn:hover {
@@ -133,7 +152,38 @@ $username = $user['username'];
             font-family: var(--font-serif);
             font-size: 3rem;
             text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-bar {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            /* Allow buttons to wrap on smaller screens */
+            gap: 15px;
             margin-bottom: 40px;
+        }
+
+        .filter-btn {
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+            color: var(--text-light);
+            padding: 10px 20px;
+            border: 1px solid #333;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active,
+        .filter-btn:hover {
+            background-color: var(--primary-gold);
+            border-color: var(--primary-gold);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px rgba(192, 160, 96, 0.5);
         }
 
         .auction-grid {
@@ -141,7 +191,6 @@ $username = $user['username'];
             flex-wrap: wrap;
             justify-content: center;
             gap: 30px;
-            perspective: 1500px;
         }
 
         .auction-card-link {
@@ -150,19 +199,17 @@ $username = $user['username'];
         }
 
         .auction-card {
-            position: relative;
             width: 320px;
             background: var(--card-bg);
             border-radius: 8px;
-            border: 1px solid #2a2a2a;
+            border: 1px solid var(--border-dark);
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-            transform-style: preserve-3d;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
         }
 
         .auction-card:hover {
-            transform: translateY(-10px) scale(1.03);
+            transform: translateY(-10px);
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 0 0 20px -5px var(--primary-gold);
         }
 
@@ -178,7 +225,7 @@ $username = $user['username'];
             margin: 0 auto;
             object-fit: contain;
             filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.7));
-            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            transition: transform 0.4s ease;
         }
 
         .auction-card:hover .watch-image {
@@ -189,28 +236,28 @@ $username = $user['username'];
             padding: 20px;
         }
 
+        .watch-brand {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
         .watch-model {
             font-family: var(--font-serif);
             font-size: 1.6rem;
             color: var(--text-color);
-            margin: 0 0 10px 0;
+            margin: 0 0 15px 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .watch-description {
-            font-size: 0.9rem;
-            color: var(--text-light);
-            height: 40px;
-            overflow: hidden;
-            margin-bottom: 15px;
-        }
-
         .auction-details {
             display: flex;
             justify-content: space-between;
-            border-top: 1px solid #2a2a2a;
+            border-top: 1px solid var(--border-dark);
             padding-top: 15px;
         }
 
@@ -248,14 +295,16 @@ $username = $user['username'];
 
     <main class="gallery-container">
         <h1 class="gallery-title">Live Auctions</h1>
+
+        <div class="filter-bar">
+            <a href="auctions.php" class="filter-btn <?= $selected_brand === 'all' ? 'active' : '' ?>">All Brands</a>
+            <?php foreach ($brands as $code => $name): ?>
+                <a href="auctions.php?brand=<?= $code ?>" class="filter-btn <?= $selected_brand === $code ? 'active' : '' ?>"><?= $name ?></a>
+            <?php endforeach; ?>
+        </div>
+
         <div class="auction-grid">
             <?php
-            $query = "SELECT *, TIMESTAMPDIFF(SECOND, NOW(), end_time) AS time_left 
-                      FROM auctions 
-                      WHERE end_time > NOW() AND status != 'expired' 
-                      ORDER BY start_time ASC";
-            $result = $conn->query($query);
-
             if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
                     $formatted_price = number_format($row['start_price']);
@@ -266,8 +315,8 @@ $username = $user['username'];
                                 <img src='uploads/{$row['image']}' alt='{$row['title']}' class='watch-image'>
                             </div>
                             <div class='card-content'>
+                                <div class='watch-brand'>{$row['brand']}</div>
                                 <h3 class='watch-model'>{$row['title']}</h3>
-                                <p class='watch-description'>{$row['description']}</p>
                                 <div class='auction-details'>
                                     <div class='detail-item'>
                                         <span>Starting Price</span>
@@ -284,44 +333,37 @@ $username = $user['username'];
                     ";
                 }
             } else {
-                echo "<p style='text-align: center; width: 100%;'>No active auctions at the moment.</p>";
+                echo "<p style='text-align: center; width: 100%; font-size: 1.2rem; color: var(--text-light);'>No active auctions found for this brand.</p>";
             }
             ?>
         </div>
     </main>
 
     <script>
-        // A simple, elegant timer to bring the cards to life.
         document.addEventListener('DOMContentLoaded', () => {
             const timers = document.querySelectorAll('.timer');
-
-            const updateTimer = (timerElement) => {
-                let secondsLeft = parseInt(timerElement.dataset.time, 10);
-
+            timers.forEach(timer => {
+                let secondsLeft = parseInt(timer.dataset.time, 10);
                 const intervalId = setInterval(() => {
                     if (secondsLeft <= 0) {
                         clearInterval(intervalId);
-                        timerElement.textContent = "Auction Ended";
+                        timer.textContent = "Auction Ended";
+                        timer.closest('.auction-card-link').style.opacity = '0.6';
+                        timer.closest('.auction-card-link').style.pointerEvents = 'none';
                         return;
                     }
-
                     secondsLeft--;
-                    timerElement.dataset.time = secondsLeft;
-
-                    const days = Math.floor(secondsLeft / (24 * 60 * 60));
-                    const hours = Math.floor((secondsLeft % (24 * 60 * 60)) / (60 * 60));
-                    const minutes = Math.floor((secondsLeft % (60 * 60)) / 60);
-                    const seconds = Math.floor(secondsLeft % 60);
-
+                    const days = Math.floor(secondsLeft / 86400);
+                    const hours = Math.floor((secondsLeft % 86400) / 3600);
+                    const minutes = Math.floor((secondsLeft % 3600) / 60);
+                    const seconds = secondsLeft % 60;
                     if (days > 0) {
-                        timerElement.textContent = `${days}d ${hours}h ${minutes}m`;
+                        timer.textContent = `${days}d ${hours}h ${minutes}m`;
                     } else {
-                        timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        timer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     }
                 }, 1000);
-            };
-
-            timers.forEach(updateTimer);
+            });
         });
     </script>
 </body>

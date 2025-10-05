@@ -22,8 +22,13 @@ $auction_id = $_GET['id'];
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $title = $_POST['title'];
     $description = $_POST['description'];
+    $brand = $_POST['brand']; // New Field
     $start_price = $_POST['start_price'];
-    $end_time = $_POST['end_time'];
+    $end_time_raw = $_POST['end_time']; // Capture raw input
+
+    // ✅ FIX: Convert the HTML datetime-local input format (YYYY-MM-DDTHH:MM) to MySQL DATETIME format (YYYY-MM-DD HH:MM:SS)
+    // This is crucial because MySQL typically doesn't handle the 'T' separator well.
+    $end_time = date('Y-m-d H:i:s', strtotime($end_time_raw));
 
     // Fetch current image name before update
     $fetch_img_query = "SELECT image FROM auctions WHERE id = ?";
@@ -52,16 +57,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     if (!$error) {
-        $update_query = "UPDATE auctions SET title=?, description=?, start_price=?, end_time=?, image=? WHERE id=?";
+        $update_query = "UPDATE auctions SET title=?, description=?, brand=?, start_price=?, end_time=?, image=? WHERE id=?";
         $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("ssdssi", $title, $description, $start_price, $end_time, $current_image, $auction_id);
+        // The new 's' is for brand
+        $stmt->bind_param("sssdisi", $title, $description, $brand, $start_price, $end_time, $current_image, $auction_id);
 
         if ($stmt->execute()) {
             $feedback_message = "Auction updated successfully!";
             header("Location: admin.php?feedback=" . urlencode($feedback_message));
             exit();
         } else {
-            $error = "Error updating auction in the database.";
+            $error = "Error updating auction in the database: " . $stmt->error; // Added error detail for debugging
         }
     }
 }
@@ -108,7 +114,7 @@ if ($result->num_rows > 0) {
             font-family: var(--font-sans);
             background-color: var(--bg-color);
             color: var(--text-color);
-            background-image: radial-gradient(circle, rgba(18, 18, 18, 0.8) 0%, rgba(18, 18, 18, 1) 75%), url('https://images.unsplash.com/photo-1610603114859-c7003b743758?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80');
+            background-image: radial-gradient(circle, rgba(18, 18, 18, 0.8) 0%, rgba(18, 18, 18, 1) 75%), url('../assets/web/bg.png');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -145,7 +151,7 @@ if ($result->num_rows > 0) {
         }
 
         .btn-view-auctions {
-            font-size: 0.8rem;
+            font-size: .8rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -154,7 +160,7 @@ if ($result->num_rows > 0) {
             padding: 8px 16px;
             border: 1px solid var(--primary-gold);
             border-radius: 20px;
-            transition: all 0.3s ease;
+            transition: all .3s ease;
         }
 
         .btn-view-auctions:hover {
@@ -164,7 +170,7 @@ if ($result->num_rows > 0) {
         }
 
         .logout-btn {
-            font-size: 0.8rem;
+            font-size: .8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             text-decoration: none;
@@ -172,20 +178,20 @@ if ($result->num_rows > 0) {
             padding: 8px 16px;
             border: 1px solid #333;
             border-radius: 20px;
-            transition: all 0.3s ease;
+            transition: all .3s ease;
         }
 
         .logout-btn:hover {
             background-color: var(--error-red);
             border-color: var(--error-red);
-            color: white;
+            color: #fff;
         }
 
         .admin-container {
             max-width: 900px;
             margin: 40px auto;
             padding: 0 40px;
-            animation: fadeIn 0.8s ease-out;
+            animation: fadeIn .8s ease-out;
         }
 
         .ledger-panel {
@@ -214,7 +220,7 @@ if ($result->num_rows > 0) {
         .form-label {
             display: block;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: .9rem;
             color: var(--text-light);
             margin-bottom: 8px;
         }
@@ -229,7 +235,7 @@ if ($result->num_rows > 0) {
             color: var(--text-color);
             font-family: var(--font-sans);
             font-size: 1rem;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            transition: border-color .3s ease, box-shadow .3s ease;
             box-sizing: border-box;
             margin-bottom: 20px;
         }
@@ -241,7 +247,7 @@ if ($result->num_rows > 0) {
 
         .form-input:focus,
         .form-textarea:focus {
-            outline: none;
+            outline: 0;
             border-color: var(--primary-gold);
             box-shadow: 0 0 15px -5px var(--primary-gold);
         }
@@ -268,15 +274,15 @@ if ($result->num_rows > 0) {
             align-items: center;
             gap: 8px;
             padding: 12px 24px;
-            font-size: 0.9rem;
+            font-size: .9rem;
             font-weight: 600;
             text-decoration: none;
             border-radius: 5px;
-            transition: all 0.3s ease, box-shadow 0.3s ease;
+            transition: all .3s ease, box-shadow .3s ease;
             cursor: pointer;
             border: none;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: .5px;
         }
 
         .btn-primary {
@@ -297,29 +303,29 @@ if ($result->num_rows > 0) {
 
         .btn-secondary:hover {
             background-color: #333;
-            color: white;
+            color: #fff;
             transform: translateY(-2px);
         }
 
         .error-message {
-            color: white;
+            color: #fff;
             background-color: rgba(183, 28, 28, 0.5);
             border: 1px solid var(--error-red);
             padding: 15px;
             border-radius: 4px;
             margin-bottom: 20px;
-            font-size: 0.9rem;
+            font-size: .9rem;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(20px)
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0)
             }
         }
     </style>
@@ -347,8 +353,11 @@ if ($result->num_rows > 0) {
 
             <?php if ($auction): ?>
                 <form method="POST" enctype="multipart/form-data">
-                    <label for="title" class="form-label">Auction Title</label>
+                    <label for="title" class="form-label">Auction Title (Model Name)</label>
                     <input type="text" id="title" name="title" class="form-input" value="<?= htmlspecialchars($auction['title']); ?>" required>
+
+                    <label for="brand" class="form-label">Brand</label>
+                    <input type="text" id="brand" name="brand" class="form-input" value="<?= htmlspecialchars($auction['brand'] ?? ''); ?>" required>
 
                     <label for="description" class="form-label">Description</label>
                     <textarea id="description" name="description" class="form-textarea" required><?= htmlspecialchars($auction['description']); ?></textarea>
