@@ -349,7 +349,6 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
         </div>
     </main>
 
-    <!-- The Heartbeat of the Bid: GSAP Integration -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/gsap.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -364,7 +363,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
             const bidAmountInput = document.getElementById('bid_amount');
             const timerElement = document.querySelector('.timer');
             let pollingInterval;
-            let lastKnownBid = -1; // Use -1 to ensure first load triggers an update
+            let lastKnownBid = -1;
 
             function playHeartbeatAnimation(newBidString) {
                 const tl = gsap.timeline();
@@ -386,7 +385,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
                     .add(() => {
                         currentBidEl.remove();
                         bidContainer.appendChild(newBidEl);
-                        currentBidEl = newBidEl; // Update the reference
+                        currentBidEl = newBidEl;
                     })
                     .from(newBidEl, {
                         duration: 0.4,
@@ -432,7 +431,6 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
 
             async function fetchBids() {
                 try {
-                    // CORRECTED PATH
                     const response = await fetch(`api/fetch_bids.php?auction_id=${auctionId}`);
                     if (!response.ok) throw new Error(`Network response error: ${response.statusText}`);
                     const data = await response.json();
@@ -441,6 +439,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
                 } catch (error) {
                     console.error("Error fetching bids:", error);
                     showFeedback('Error fetching latest bid data.', 'error', 5000);
+                    if (pollingInterval) clearInterval(pollingInterval); // Stop polling on error
                 }
             }
 
@@ -461,7 +460,6 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
                     const formData = new FormData(bidForm);
 
                     try {
-                        // CORRECTED PATH
                         const response = await fetch('api/place_bid.php', {
                             method: 'POST',
                             body: formData
