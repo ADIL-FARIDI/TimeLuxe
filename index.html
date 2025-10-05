@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Horologist's Dream | TimeLuxe Auctions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Inter:wght@300;400&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --primary-gold: #c0a060;
+            --text-color: #EAEAEA;
+            --text-light: #999;
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-sans: 'Inter', sans-serif;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 0 8px -4px var(--primary-gold);
+            }
+
+            50% {
+                box-shadow: 0 0 16px 0px var(--primary-gold);
+            }
+
+            100% {
+                box-shadow: 0 0 8px -4px var(--primary-gold);
+            }
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .welcome-container {
+            padding: 2rem;
+            max-width: 800px;
+            z-index: 1;
+        }
+
+        .logo {
+            width: 150px;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.2s forwards;
+        }
+
+        h1 {
+            font-family: var(--font-serif);
+            font-size: clamp(3rem, 6vw + 1rem, 5.5rem);
+            font-weight: 700;
+            letter-spacing: 1px;
+            line-height: 1.2;
+            color: var(--text-color);
+            margin: 0;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.5s forwards;
+        }
+
+        h1 .gold-text {
+            font-family: "Bodoni Moda", serif;
+            color: var(--primary-gold);
+            font-style: italic;
+        }
+
+        p {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: var(--text-light);
+            font-weight: 300;
+            max-width: 500px;
+            margin: 1.5rem auto 2.5rem;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.8s forwards;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            font-family: var(--font-sans);
+            padding: 15px 35px;
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: var(--text-color);
+            background: transparent;
+            border: 1px solid var(--primary-gold);
+            border-radius: 50px;
+            transition: color 0.4s ease, background-color 0.4s ease, box-shadow 0.4s ease;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 1.1s forwards, pulseGlow 4s ease-in-out infinite 2s;
+        }
+
+        .cta-btn:hover {
+            color: var(--bg-color);
+            background-color: var(--primary-gold);
+            box-shadow: 0 0 20px 0px var(--primary-gold);
+            animation-play-state: paused;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="welcome-container">
+        <img src="./assets/logo-no-bg-W.png" alt="TimeLuxe Monogram" class="logo">
+        <h1>
+            Where Time Becomes <span class="gold-text">Legacy</span>
+        </h1>
+        <p>Experience the art of horology. Discover, desire, and acquire the world's most coveted timepieces.</p>
+        <a href="./login.php" class="cta-btn">Explore The Collection</a>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module">
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('bg-canvas'),
+            alpha: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const createParticleTexture = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const context = canvas.getContext('2d');
+            const gradient = context.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, canvas.width / 2
+            );
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            return new THREE.CanvasTexture(canvas);
+        };
+
+        const particleCount = 5000;
+        const positions = new Float32Array(particleCount * 3);
+        // --- FIX: Changed loop condition from particleCount * 1 to particleCount * 3 ---
+        // This ensures all particles (x, y, and z coords) get a random position.
+        for (let i = 0; i < particleCount * 7; i++) {
+            positions[i] = (Math.random() - 0.5) * 24;
+        }
+        const particlesGeometry = new THREE.BufferGeometry();
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0xc0a060,
+            size: 0.1,
+            map: createParticleTexture(),
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+            depthWrite: false
+        });
+
+        const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particleSystem);
+        camera.position.z = 5;
+
+        let mouseX = 0;
+        let mouseY = 0;
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            particleSystem.rotation.x += 0.0001;
+            particleSystem.rotation.y += 0.0002;
+
+            const targetX = mouseX * 0.5;
+            const targetY = mouseY * 0.5;
+            camera.position.x += (targetX - camera.position.x) * 0.02;
+            camera.position.y += (targetY - camera.position.y) * 0.02;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+
+</html>
