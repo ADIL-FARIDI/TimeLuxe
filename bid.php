@@ -193,7 +193,10 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
             transition: color 0.3s ease;
         }
 
-        .bid-form {
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
             margin-top: 20px;
         }
 
@@ -208,7 +211,6 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
             font-size: 1.2rem;
             transition: all 0.3s ease;
             box-sizing: border-box;
-            margin-bottom: 15px;
         }
 
         .form-input:focus {
@@ -233,6 +235,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
             text-transform: uppercase;
             letter-spacing: 1px;
             width: 100%;
+            box-sizing: border-box;
         }
 
         .btn-primary {
@@ -243,6 +246,18 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
         .btn-primary:hover {
             background-color: #d4b57a;
             box-shadow: 0 0 15px rgba(192, 160, 96, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-light);
+            border: 1px solid #444;
+        }
+
+        .btn-secondary:hover {
+            background-color: #222;
+            color: white;
             transform: translateY(-2px);
         }
 
@@ -265,7 +280,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
             font-size: 0.9rem;
             text-align: center;
             width: 100%;
-            animation: fadeIn 0.3s;
+            animation: fadeIn 0.3s ease;
         }
 
         .feedback-success {
@@ -338,18 +353,20 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
 
             <div id="feedback-container"></div>
 
-            <div id="form-container">
-                <form class="bid-form" id="bid-form">
+            <div id="form-container" class="form-container">
+                <form class="bid-form" id="bid-form" style="margin:0;">
                     <label for="bid_amount" style="display:none;">Bid Amount</label>
-                    <input type="number" id="bid_amount" name="bid_amount" class="form-input" step="100" required>
+                    <input type="number" id="bid_amount" name="bid_amount" class="form-input" style="margin-bottom:0;" step="100" required>
                     <input type="hidden" name="auction_id" value="<?= $auction_id ?>">
+                    <br>
+                    <br>
                     <button type="submit" class="btn btn-primary">Place Your Bid</button>
                 </form>
+                <a href="auctions.php" class="btn btn-secondary">Back to Gallery</a>
             </div>
         </div>
     </main>
 
-    <!-- The Heartbeat of the Bid: GSAP Integration -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/gsap.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -364,7 +381,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
             const bidAmountInput = document.getElementById('bid_amount');
             const timerElement = document.querySelector('.timer');
             let pollingInterval;
-            let lastKnownBid = -1; // Use -1 to ensure first load triggers an update
+            let lastKnownBid = -1;
 
             function playHeartbeatAnimation(newBidString) {
                 const tl = gsap.timeline();
@@ -386,7 +403,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
                     .add(() => {
                         currentBidEl.remove();
                         bidContainer.appendChild(newBidEl);
-                        currentBidEl = newBidEl; // Update the reference
+                        currentBidEl = newBidEl;
                     })
                     .from(newBidEl, {
                         duration: 0.4,
@@ -432,8 +449,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
 
             async function fetchBids() {
                 try {
-                    // CORRECTED PATH
-                    const response = await fetch(`api/fetch_bids.php?auction_id=${auctionId}`);
+                    const response = await fetch(`fetch_bids.php?auction_id=${auctionId}`);
                     if (!response.ok) throw new Error(`Network response error: ${response.statusText}`);
                     const data = await response.json();
                     if (data.error) throw new Error(data.error);
@@ -441,6 +457,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
                 } catch (error) {
                     console.error("Error fetching bids:", error);
                     showFeedback('Error fetching latest bid data.', 'error', 5000);
+                    if (pollingInterval) clearInterval(pollingInterval);
                 }
             }
 
@@ -461,8 +478,7 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
                     const formData = new FormData(bidForm);
 
                     try {
-                        // CORRECTED PATH
-                        const response = await fetch('api/place_bid.php', {
+                        const response = await fetch('place_bid.php', {
                             method: 'POST',
                             body: formData
                         });
@@ -492,7 +508,8 @@ $username = $stmt->get_result()->fetch_assoc()['username'];
                     timerElement.textContent = "Auction Ended";
                     const formContainer = document.getElementById('form-container');
                     if (formContainer) {
-                        formContainer.innerHTML = `<button class="btn btn-disabled" disabled>Auction Has Ended</button>`;
+                        formContainer.innerHTML = `<button class="btn btn-disabled" disabled>Auction Has Ended</button>
+                    <a href="auctions.php" class="btn btn-secondary">Back to Gallery</a>`;
                     }
                     return;
                 }
