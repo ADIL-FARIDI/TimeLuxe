@@ -1,0 +1,288 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome | TimeLuxe Auctions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --primary-gold: #c0a060;
+            --text-color: #EAEAEA;
+            --text-light: #999;
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-sans: 'Inter', sans-serif;
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 0 8px -4px var(--primary-gold);
+            }
+
+            50% {
+                box-shadow: 0 0 16px 0px var(--primary-gold);
+            }
+
+            100% {
+                box-shadow: 0 0 8px -4px var(--primary-gold);
+            }
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .welcome-container {
+            padding: 2rem;
+            max-width: 800px;
+            z-index: 1;
+        }
+
+        .logo,
+        h1,
+        #description,
+        .cta-container {
+            opacity: 0;
+            /* Hidden for GSAP animation */
+        }
+
+        h1 {
+            font-family: var(--font-serif);
+            font-size: clamp(2.5rem, 5vw + 1rem, 4.5rem);
+            font-weight: 700;
+            letter-spacing: 1px;
+            line-height: 1.2;
+            color: var(--text-color);
+            margin: 0;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 .char {
+            display: inline-block;
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        h1 .gold-text {
+            color: var(--primary-gold);
+        }
+
+        #description {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: var(--text-light);
+            font-weight: 300;
+            max-width: 550px;
+            margin: 1.5rem auto 2.5rem;
+            line-height: 1.6;
+        }
+
+        .cta-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            font-family: var(--font-sans);
+            padding: 15px 35px;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-decoration: none;
+            border-radius: 50px;
+            transition: all 0.4s ease;
+        }
+
+        .btn-primary {
+            color: var(--bg-color);
+            background-color: var(--primary-gold);
+            border: 1px solid var(--primary-gold);
+            animation: pulseGlow 4s ease-in-out infinite 1s;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 20px 0px var(--primary-gold);
+            transform: translateY(-2px);
+            animation-play-state: paused;
+        }
+
+        .btn-secondary {
+            color: var(--text-color);
+            background: transparent;
+            border: 1px solid #444;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--text-color);
+            border-color: var(--text-color);
+            color: var(--bg-color);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="welcome-container">
+        <h1 id="main-heading">
+            Welcome, <span class="gold-text"><?= htmlspecialchars($username) ?></span>
+        </h1>
+        <p id="description">Your legacy in time awaits. Will you acquire a masterpiece or offer one to the world?</p>
+        <div class="cta-container">
+            <a href="auctions.php" class="cta-btn btn-primary">Explore Auctions</a>
+            <a href="#" class="cta-btn btn-secondary">Sell a Watch</a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/gsap.min.js"></script>
+    <script type="module">
+        // --- GSAP Animation Choreography ---
+        function runIntroAnimation() {
+            const heading = document.getElementById('main-heading');
+            const newContent = document.createDocumentFragment();
+            Array.from(heading.childNodes).forEach(node => {
+                const text = node.textContent;
+                const parentClass = node.className || '';
+                if (node.nodeType === Node.TEXT_NODE && text.trim() !== '') {
+                    text.split('').forEach(char => {
+                        const span = document.createElement('span');
+                        span.className = 'char';
+                        span.textContent = char;
+                        newContent.appendChild(span);
+                    });
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    const elementClone = node.cloneNode(true);
+                    elementClone.innerHTML = text.split('').map(char => `<span class="char">${char}</span>`).join('');
+                    newContent.appendChild(elementClone);
+                } else {
+                    newContent.appendChild(node.cloneNode());
+                }
+            });
+            heading.innerHTML = '';
+            heading.appendChild(newContent);
+
+            const tl = gsap.timeline();
+            tl.to('h1 .char', {
+                    opacity: 1,
+                    y: 0,
+                    stagger: 0.04,
+                    duration: 1.2,
+                    ease: 'power4.out'
+                })
+                .to('#description', {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: 'power3.out'
+                }, "-=0.8")
+                .to('.cta-container', {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: 'power3.out'
+                }, "-=0.6");
+        }
+
+        // --- Three.js Interactive Background ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('bg-canvas'),
+            alpha: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const createParticleTexture = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const context = canvas.getContext('2d');
+            const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, 128, 128);
+            return new THREE.CanvasTexture(canvas);
+        };
+
+        const particleCount = 5000;
+        const positions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount * 3; i++) {
+            positions[i] = (Math.random() - 0.5) * 15;
+        }
+        const particlesGeometry = new THREE.BufferGeometry();
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0xc0a060,
+            size: 0.1,
+            map: createParticleTexture(),
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+            depthWrite: false
+        });
+        const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particleSystem);
+        camera.position.z = 5;
+
+        let mouseX = 0,
+            mouseY = 0;
+        document.addEventListener('mousemove', e => {
+            mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            particleSystem.rotation.x += 0.0001;
+            particleSystem.rotation.y += 0.0002;
+            camera.position.x += (mouseX * 0.5 - camera.position.x) * 0.02;
+            camera.position.y += (mouseY * 0.5 - camera.position.y) * 0.02;
+            camera.lookAt(scene.position);
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        function init() {
+            runIntroAnimation();
+            animate();
+        }
+
+        init();
+    </script>
+</body>
+
+</html> -->

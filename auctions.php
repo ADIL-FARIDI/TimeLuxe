@@ -105,6 +105,10 @@ $result = $stmt->get_result();
             gap: 20px;
         }
 
+        .user-info span {
+            font-size: 0.9rem;
+        }
+
         .admin-btn {
             font-size: 0.8rem;
             font-weight: 600;
@@ -142,6 +146,49 @@ $result = $stmt->get_result();
             color: var(--bg-color);
         }
 
+        .contact-btn {
+            position: relative;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .contact-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-light);
+            transition: fill 0.3s ease;
+        }
+
+        .contact-btn:hover svg {
+            fill: var(--primary-gold);
+        }
+
+        .contact-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .contact-btn:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+
         .gallery-container {
             max-width: 1400px;
             margin: 40px auto;
@@ -159,7 +206,6 @@ $result = $stmt->get_result();
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            /* Allow buttons to wrap on smaller screens */
             gap: 15px;
             margin-bottom: 40px;
         }
@@ -286,6 +332,12 @@ $result = $stmt->get_result();
         <a href="auctions.php"><img src="./assets/logo-no-bg-W.png" alt="TimeLuxe Monogram" class="header-logo"></a>
         <div class="user-info">
             <span>Welcome, <?php echo htmlspecialchars($username); ?></span>
+            <a href="mailto:admin@timeluxe.com" class="contact-btn" data-tooltip="Contact Admin to sell your timepiece">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                </svg>
+            </a>
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                 <a href="php/admin.php" class="admin-btn">Admin Panel</a>
             <?php endif; ?>
