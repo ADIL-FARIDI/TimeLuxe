@@ -231,7 +231,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </form>
 
         <div class="extra-links">
-            <span>Don't have an account? <a href="register.php">Register</a></span>
+            <span>Don't have an account?
+                <br>
+                <br>
+                <a href="register.php">Register</a></span>
             <span style="margin: 0 10px;">|</span>
             <span><a href="index.html">Go Home</a></span>
         </div>
